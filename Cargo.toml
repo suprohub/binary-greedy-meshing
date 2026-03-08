@@ -15,6 +15,7 @@ __dev_criterion = ["dep:criterion"]
 bitfields = "1.0"
 bevy = { version = "0.18", optional = true }
 criterion = { version = "0.8", optional = true }
+num-traits = { version = "0.2", default-features = false }
 
 [[bench]]
 name = "mesh"
@@ -23,6 +24,10 @@ required-features = ["__dev_criterion"]
 
 [[example]]
 name = "sphere"
+required-features = ["__dev_bevy"]
+
+[[example]]
+name = "sphere32"
 required-features = ["__dev_bevy"]
 
 [[example]]

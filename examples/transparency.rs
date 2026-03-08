@@ -9,7 +9,7 @@ use bevy::{
         settings::{RenderCreation, WgpuFeatures, WgpuSettings},
     },
 };
-use binary_greedy_meshing as bgm;
+use binary_greedy_meshing::{self as bgm, MiniMesher};
 
 pub const ATTRIBUTE_VOXEL_DATA: MeshVertexAttribute =
     MeshVertexAttribute::new("VoxelData", 48757581, VertexFormat::Uint32x2);
@@ -37,7 +37,7 @@ fn main() {
 
 /// 0 = Air, 1 = Solid, 2 = transparent, 3 = other transparent
 /// This returns a "sandwich" with 1 solid layer and 2 transparent layers
-fn transparent_sandwich(x: usize, y: usize, z: usize) -> u16 {
+fn transparent_sandwich(x: usize, y: usize, z: usize) -> u8 {
     if y > SIZE || z > SIZE {
         return 0;
     }
@@ -111,9 +111,9 @@ fn setup(
 /// Generate 1 mesh per block type for simplicity, in practice we would use a texture array and a custom shader instead
 fn generate_meshes() -> [Mesh; 3] {
     let voxels = voxel_buffer();
-    let mut mesher = bgm::Mesher::<CS>::new();
-    let opaque_mask = bgm::compute_opaque_mask::<CS>(&voxels, |v| v == 2 || v == 3);
-    let trans_mask = bgm::compute_transparent_mask::<CS>(&voxels, |v| v == 2 || v == 3);
+    let mut mesher = MiniMesher::new();
+    let opaque_mask = MiniMesher::compute_opaque_mask(&voxels, |v| v == 2 || v == 3);
+    let trans_mask = MiniMesher::compute_transparent_mask(&voxels, |v| v == 2 || v == 3);
     mesher.fast_mesh(&voxels, &opaque_mask, &trans_mask);
     let mut positions: [_; 3] = core::array::from_fn(|_| Vec::new());
     let mut normals: [_; 3] = core::array::from_fn(|_| Vec::new());
@@ -131,7 +131,7 @@ fn generate_meshes() -> [Mesh; 3] {
         }
     }
     for i in 0..positions.len() {
-        indices[i] = bgm::indices(positions[i].len() / 4);
+        indices[i] = MiniMesher::indices(positions[i].len() / 4);
     }
     core::array::from_fn(|i| {
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::all());
@@ -152,12 +152,12 @@ fn generate_meshes() -> [Mesh; 3] {
     })
 }
 
-fn voxel_buffer() -> [u16; bgm::Mesher::<CS>::CS_P3] {
-    let mut voxels = [0; bgm::Mesher::<CS>::CS_P3];
+fn voxel_buffer() -> [u8; MiniMesher::CS_P3] {
+    let mut voxels = [0; MiniMesher::CS_P3];
     for x in 0..CS {
         for y in 0..CS {
             for z in 0..CS {
-                voxels[bgm::pad_linearize::<CS>(x, y, z)] = transparent_sandwich(x, y, z);
+                voxels[MiniMesher::pad_linearize(x, y, z)] = transparent_sandwich(x, y, z);
             }
         }
     }
