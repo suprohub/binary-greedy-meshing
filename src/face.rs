@@ -1,3 +1,5 @@
+use bitfields::bitfield;
+
 use crate::Quad;
 
 const MASK_XYZ: u64 = 0b111111_111111_111111;
@@ -27,48 +29,40 @@ impl From<u8> for Face {
     }
 }
 
+#[bitfield(u32, new = false)]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Vertex(pub u32);
-
-impl Default for Vertex {
-    fn default() -> Self {
-        Self::new()
-    }
+pub struct Vertex {
+    #[bits(6)]
+    x: u8,
+    #[bits(6)]
+    y: u8,
+    #[bits(6)]
+    z: u8,
+    #[bits(6)]
+    u: u8,
+    #[bits(6)]
+    v: u8,
+    #[bits(2)]
+    _reserved: u8,
 }
 
 impl Vertex {
-    const MASK_6: u32 = 0b111111;
-
-    pub fn new() -> Self {
-        Self(0u32)
+    pub fn new(x: u8, y: u8, z: u8, u: u8, v: u8) -> Self {
+        VertexBuilder::new()
+            .with_x(x)
+            .with_y(y)
+            .with_z(z)
+            .with_u(u)
+            .with_v(v)
+            .build()
     }
 
-    pub fn pack(xyz: u32, u: u32, v: u32) -> Self {
+    pub const fn new_xyz(xyz: u32, u: u32, v: u32) -> Self {
         Self((v << 24) | (u << 18) | xyz)
     }
 
-    pub fn x(&self) -> u32 {
-        self.0 & Vertex::MASK_6
-    }
-
-    pub fn y(&self) -> u32 {
-        (self.0 >> 6) & Vertex::MASK_6
-    }
-
-    pub fn z(&self) -> u32 {
-        (self.0 >> 12) & Vertex::MASK_6
-    }
-
-    pub fn u(&self) -> u32 {
-        (self.0 >> 18) & Vertex::MASK_6
-    }
-
-    pub fn v(&self) -> u32 {
-        (self.0 >> 24) & Vertex::MASK_6
-    }
-
-    pub fn xyz(&self) -> [u32; 3] {
-        [self.x(), self.y(), self.z()]
+    pub const fn xyz(&self) -> [f32; 3] {
+        [self.x() as f32, self.y() as f32, self.z() as f32]
     }
 }
 
@@ -107,40 +101,40 @@ impl Face {
         let xyz = (MASK_XYZ & quad.into_bits()) as u32;
         match self {
             Face::Left => [
-                Vertex::pack(xyz, h, w),
-                Vertex::pack(xyz + packed_xyz(0, 0, h), 0, w),
-                Vertex::pack(xyz + packed_xyz(0, w, 0), h, 0),
-                Vertex::pack(xyz + packed_xyz(0, w, h), 0, 0),
+                Vertex::new_xyz(xyz, h, w),
+                Vertex::new_xyz(xyz + packed_xyz(0, 0, h), 0, w),
+                Vertex::new_xyz(xyz + packed_xyz(0, w, 0), h, 0),
+                Vertex::new_xyz(xyz + packed_xyz(0, w, h), 0, 0),
             ],
             Face::Down => [
-                Vertex::pack(xyz - packed_xyz(w, 0, 0) + packed_xyz(0, 0, h), w, h),
-                Vertex::pack(xyz - packed_xyz(w, 0, 0), w, 0),
-                Vertex::pack(xyz + packed_xyz(0, 0, h), 0, h),
-                Vertex::pack(xyz, 0, 0),
+                Vertex::new_xyz(xyz - packed_xyz(w, 0, 0) + packed_xyz(0, 0, h), w, h),
+                Vertex::new_xyz(xyz - packed_xyz(w, 0, 0), w, 0),
+                Vertex::new_xyz(xyz + packed_xyz(0, 0, h), 0, h),
+                Vertex::new_xyz(xyz, 0, 0),
             ],
             Face::Back => [
-                Vertex::pack(xyz, w, h),
-                Vertex::pack(xyz + packed_xyz(0, h, 0), w, 0),
-                Vertex::pack(xyz + packed_xyz(w, 0, 0), 0, h),
-                Vertex::pack(xyz + packed_xyz(w, h, 0), 0, 0),
+                Vertex::new_xyz(xyz, w, h),
+                Vertex::new_xyz(xyz + packed_xyz(0, h, 0), w, 0),
+                Vertex::new_xyz(xyz + packed_xyz(w, 0, 0), 0, h),
+                Vertex::new_xyz(xyz + packed_xyz(w, h, 0), 0, 0),
             ],
             Face::Right => [
-                Vertex::pack(xyz, 0, 0),
-                Vertex::pack(xyz + packed_xyz(0, 0, h), h, 0),
-                Vertex::pack(xyz - packed_xyz(0, w, 0), 0, w),
-                Vertex::pack(xyz + packed_xyz(0, 0, h) - packed_xyz(0, w, 0), h, w),
+                Vertex::new_xyz(xyz, 0, 0),
+                Vertex::new_xyz(xyz + packed_xyz(0, 0, h), h, 0),
+                Vertex::new_xyz(xyz - packed_xyz(0, w, 0), 0, w),
+                Vertex::new_xyz(xyz + packed_xyz(0, 0, h) - packed_xyz(0, w, 0), h, w),
             ],
             Face::Up => [
-                Vertex::pack(xyz + packed_xyz(w, 0, h), w, h),
-                Vertex::pack(xyz + packed_xyz(w, 0, 0), w, 0),
-                Vertex::pack(xyz + packed_xyz(0, 0, h), 0, h),
-                Vertex::pack(xyz, 0, 0),
+                Vertex::new_xyz(xyz + packed_xyz(w, 0, h), w, h),
+                Vertex::new_xyz(xyz + packed_xyz(w, 0, 0), w, 0),
+                Vertex::new_xyz(xyz + packed_xyz(0, 0, h), 0, h),
+                Vertex::new_xyz(xyz, 0, 0),
             ],
             Face::Front => [
-                Vertex::pack(xyz - packed_xyz(w, 0, 0) + packed_xyz(0, h, 0), 0, 0),
-                Vertex::pack(xyz - packed_xyz(w, 0, 0), 0, h),
-                Vertex::pack(xyz + packed_xyz(0, h, 0), w, 0),
-                Vertex::pack(xyz, w, h),
+                Vertex::new_xyz(xyz - packed_xyz(w, 0, 0) + packed_xyz(0, h, 0), 0, 0),
+                Vertex::new_xyz(xyz - packed_xyz(w, 0, 0), 0, h),
+                Vertex::new_xyz(xyz + packed_xyz(0, h, 0), w, 0),
+                Vertex::new_xyz(xyz, w, h),
             ],
         }
     }

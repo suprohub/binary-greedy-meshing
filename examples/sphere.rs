@@ -88,8 +88,7 @@ fn generate_mesh() -> Mesh {
         for quad in quads {
             let vertices_packed = face.vertices_packed(*quad);
             for vertex in vertices_packed.iter() {
-                let [x, y, z] = vertex.xyz();
-                positions.push([x as f32, y as f32, z as f32]);
+                positions.push(vertex.xyz());
                 normals.push(n);
             }
         }

@@ -15,18 +15,18 @@ pub struct Quad {
     h: u8,
     #[bits(2)] // ao
     _reserved: u8,
-    voxel_id: u32,
+    m: u32,
 }
 
 impl Quad {
-    pub fn new(x: u8, y: u8, z: u8, w: u8, h: u8, id: u32) -> Self {
+    pub fn new(x: u8, y: u8, z: u8, w: u8, h: u8, m: u32) -> Self {
         QuadBuilder::new()
             .with_x(x)
             .with_y(y)
             .with_z(z)
             .with_w(w)
             .with_h(h)
-            .with_voxel_id(id)
+            .with_m(m)
             .build()
     }
 }

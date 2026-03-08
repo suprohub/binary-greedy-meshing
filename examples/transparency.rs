@@ -122,11 +122,10 @@ fn generate_meshes() -> [Mesh; 3] {
         let face: bgm::Face = (face_n as u8).into();
         let n = face.n().map(|v| v as f32);
         for &quad in quads {
-            let voxel_i = quad.voxel_id() as usize - 1;
+            let voxel_i = quad.m() as usize - 1;
             let vertices_packed = face.vertices_packed(quad);
             for &vertex in vertices_packed.iter() {
-                let [x, y, z] = vertex.xyz();
-                positions[voxel_i].push([x as f32, y as f32, z as f32]);
+                positions[voxel_i].push(vertex.xyz());
                 normals[voxel_i].push(n);
             }
         }
