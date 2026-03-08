@@ -1,4 +1,4 @@
-#![no_std]
+// #![no_std]
 
 #[macro_use]
 extern crate alloc;
@@ -233,44 +233,23 @@ impl<const CS: usize> Mesher<CS> {
                         self.forward_merged[bit_pos] = 0;
                         right_merged = 1;
 
-                        let v_type = v_type as usize;
-
-                        let quad = match face {
-                            0 => Quad::pack(
-                                mesh_front,
-                                mesh_up,
-                                mesh_left,
-                                mesh_length,
-                                mesh_width,
-                                v_type,
-                            ),
-                            1 => Quad::pack(
-                                mesh_front + mesh_length,
-                                mesh_up,
-                                mesh_left,
-                                mesh_length,
-                                mesh_width,
-                                v_type,
-                            ),
-                            2 => Quad::pack(
-                                mesh_up,
-                                mesh_front + mesh_length,
-                                mesh_left,
-                                mesh_length,
-                                mesh_width,
-                                v_type,
-                            ),
-                            3 => Quad::pack(
-                                mesh_up,
-                                mesh_front,
-                                mesh_left,
-                                mesh_length,
-                                mesh_width,
-                                v_type,
-                            ),
+                        let v_type = v_type as u32;
+                        let (x, y, z) = match face {
+                            0 => (mesh_front, mesh_up, mesh_left),
+                            1 => (mesh_front + mesh_length, mesh_up, mesh_left),
+                            2 => (mesh_up, mesh_front + mesh_length, mesh_left),
+                            3 => (mesh_up, mesh_front, mesh_left),
                             _ => unreachable!(),
                         };
-                        self.quads[face].push(quad);
+
+                        self.quads[face].push(Quad::new(
+                            x as u8,
+                            y as u8,
+                            z as u8,
+                            mesh_length as u8,
+                            mesh_width as u8,
+                            v_type,
+                        ));
                     }
                 }
             }
@@ -344,15 +323,14 @@ impl<const CS: usize> Mesher<CS> {
                         self.forward_merged[forward_merge_i] = 0;
                         *right_merged_ref = 0;
 
-                        let quad = Quad::pack(
-                            mesh_left + (if face == 4 { mesh_width } else { 0 }) as usize,
-                            mesh_front,
-                            mesh_up,
-                            mesh_width as usize,
-                            mesh_length as usize,
-                            v_type as usize,
-                        );
-                        self.quads[face].push(quad);
+                        self.quads[face].push(Quad::new(
+                            mesh_left as u8 + (if face == 4 { mesh_width } else { 0 }),
+                            mesh_front as u8,
+                            mesh_up as u8,
+                            mesh_width,
+                            mesh_length,
+                            v_type as u32,
+                        ));
                     }
                 }
             }
@@ -483,8 +461,9 @@ mod tests {
         let voxels = test_buffer();
         let transparent_blocks = BTreeSet::from([2]);
         let opaque_mask = bgm::compute_opaque_mask::<CS>(voxels.as_slice(), |_| false);
-        let trans_mask =
-            bgm::compute_transparent_mask::<CS>(voxels.as_slice(), |v| transparent_blocks.contains(&v));
+        let trans_mask = bgm::compute_transparent_mask::<CS>(voxels.as_slice(), |v| {
+            transparent_blocks.contains(&v)
+        });
         let mut mesher1 = bgm::Mesher::<CS>::new();
         mesher1.mesh(voxels.as_slice(), |v| transparent_blocks.contains(&v));
         let mut mesher2 = bgm::Mesher::<CS>::new();

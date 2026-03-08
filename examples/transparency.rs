@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use bevy::{
     asset::RenderAssetUsages,
     mesh::{Indices, MeshVertexAttribute, PrimitiveTopology, VertexAttributeValues},
@@ -114,11 +112,8 @@ fn setup(
 fn generate_meshes() -> [Mesh; 3] {
     let voxels = voxel_buffer();
     let mut mesher = bgm::Mesher::<CS>::new();
-    let mut transparent_blocks = BTreeSet::new();
-    transparent_blocks.insert(2);
-    transparent_blocks.insert(3);
-    let opaque_mask = bgm::compute_opaque_mask::<CS>(&voxels, &transparent_blocks);
-    let trans_mask = bgm::compute_transparent_mask::<CS>(&voxels, &transparent_blocks);
+    let opaque_mask = bgm::compute_opaque_mask::<CS>(&voxels, |v| v == 2 || v == 3);
+    let trans_mask = bgm::compute_transparent_mask::<CS>(&voxels, |v| v == 2 || v == 3);
     mesher.fast_mesh(&voxels, &opaque_mask, &trans_mask);
     let mut positions: [_; 3] = core::array::from_fn(|_| Vec::new());
     let mut normals: [_; 3] = core::array::from_fn(|_| Vec::new());
@@ -132,7 +127,7 @@ fn generate_meshes() -> [Mesh; 3] {
             for &vertex in vertices_packed.iter() {
                 let [x, y, z] = vertex.xyz();
                 positions[voxel_i].push([x as f32, y as f32, z as f32]);
-                normals[voxel_i].push(n.clone());
+                normals[voxel_i].push(n);
             }
         }
     }

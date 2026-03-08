@@ -102,9 +102,9 @@ impl Face {
     /// Takes a quad as outputted by binary greedy meshing, and outputs 4 vertices encoded as:
     /// (v << 24) | (u << 18) | (z << 12) | (y << 6) | x
     pub fn vertices_packed(&self, quad: Quad) -> [Vertex; 4] {
-        let w = quad.width() as u32;
-        let h = quad.height() as u32;
-        let xyz = (MASK_XYZ & quad.0) as u32;
+        let w = quad.w() as u32;
+        let h = quad.h() as u32;
+        let xyz = (MASK_XYZ & quad.into_bits()) as u32;
         match self {
             Face::Left => [
                 Vertex::pack(xyz, h, w),

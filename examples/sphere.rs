@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use bevy::{
     asset::RenderAssetUsages,
     mesh::{Indices, MeshVertexAttribute, PrimitiveTopology, VertexAttributeValues},
@@ -79,7 +77,7 @@ fn setup(
 fn generate_mesh() -> Mesh {
     let voxels = voxel_buffer();
     let mut mesher = bgm::Mesher::<CS>::new();
-    let opaque_mask = bgm::compute_opaque_mask::<CS>(&voxels, &BTreeSet::new());
+    let opaque_mask = bgm::compute_opaque_mask::<CS>(&voxels, |_| false);
     let trans_mask = vec![0; bgm::Mesher::<CS>::CS_P2].into_boxed_slice();
     mesher.fast_mesh(&voxels, &opaque_mask, &trans_mask);
     let mut positions = Vec::new();
@@ -92,7 +90,7 @@ fn generate_mesh() -> Mesh {
             for vertex in vertices_packed.iter() {
                 let [x, y, z] = vertex.xyz();
                 positions.push([x as f32, y as f32, z as f32]);
-                normals.push(n.clone());
+                normals.push(n);
             }
         }
     }
