@@ -6,7 +6,7 @@ extern crate alloc;
 mod face;
 mod quad;
 
-use alloc::{boxed::Box, collections::btree_set::BTreeSet, vec::Vec};
+use alloc::{boxed::Box, vec::Vec};
 
 pub use face::*;
 pub use quad::*;
@@ -24,6 +24,17 @@ pub struct Mesher<const CS: usize> {
     right_merged: Box<[u8]>,
 }
 
+impl<const CS: usize> Default for Mesher<CS> {
+    fn default() -> Self {
+        Self {
+            face_masks: vec![0; Self::CS_2 * 6].into_boxed_slice(),
+            forward_merged: vec![0; Self::CS_2].into_boxed_slice(),
+            right_merged: vec![0; CS].into_boxed_slice(),
+            quads: core::array::from_fn(|_| Vec::new()),
+        }
+    }
+}
+
 impl<const CS: usize> Mesher<CS> {
     pub const CS_2: usize = CS * CS;
     pub const CS_P: usize = CS + 2;
@@ -33,12 +44,7 @@ impl<const CS: usize> Mesher<CS> {
 
     /// Creates a mesher object, allocates necessary buffers
     pub fn new() -> Self {
-        Self {
-            face_masks: vec![0; Self::CS_2 * 6].into_boxed_slice(),
-            forward_merged: vec![0; Self::CS_2].into_boxed_slice(),
-            right_merged: vec![0; CS].into_boxed_slice(),
-            quads: core::array::from_fn(|_| Vec::new()),
-        }
+        Self::default()
     }
 
     /// Call this between each meshing call to reset the buffers without reallocating them
@@ -51,7 +57,7 @@ impl<const CS: usize> Mesher<CS> {
         }
     }
 
-    fn face_culling(&mut self, voxels: &[u16], transparents: &BTreeSet<u16>) {
+    fn face_culling(&mut self, voxels: &[u16], is_transparent: impl Fn(u16) -> bool) {
         // Hidden face culling
         for a in 1..(Self::CS_P - 1) {
             let a_cs_p = a * Self::CS_P;
@@ -67,20 +73,20 @@ impl<const CS: usize> Mesher<CS> {
                     if v1 == 0 {
                         continue;
                     }
-                    self.face_masks[ba_index + 0 * Self::CS_2] |=
-                        face_value(v1, voxels[abc + Self::CS_P2], &transparents) << (c - 1);
-                    self.face_masks[ba_index + 1 * Self::CS_2] |=
-                        face_value(v1, voxels[abc - Self::CS_P2], &transparents) << (c - 1);
+                    self.face_masks[ba_index] |=
+                        face_value(v1, voxels[abc + Self::CS_P2], &is_transparent) << (c - 1);
+                    self.face_masks[ba_index + Self::CS_2] |=
+                        face_value(v1, voxels[abc - Self::CS_P2], &is_transparent) << (c - 1);
 
                     self.face_masks[ab_index + 2 * Self::CS_2] |=
-                        face_value(v1, voxels[abc + Self::CS_P], &transparents) << (c - 1);
+                        face_value(v1, voxels[abc + Self::CS_P], &is_transparent) << (c - 1);
                     self.face_masks[ab_index + 3 * Self::CS_2] |=
-                        face_value(v1, voxels[abc - Self::CS_P], &transparents) << (c - 1);
+                        face_value(v1, voxels[abc - Self::CS_P], &is_transparent) << (c - 1);
 
                     self.face_masks[ba_index + 4 * Self::CS_2] |=
-                        face_value(v1, voxels[abc + 1], &transparents) << c;
+                        face_value(v1, voxels[abc + 1], &is_transparent) << c;
                     self.face_masks[ba_index + 5 * Self::CS_2] |=
-                        face_value(v1, voxels[abc - 1], &transparents) << c;
+                        face_value(v1, voxels[abc - 1], &is_transparent) << c;
                 }
             }
         }
@@ -98,8 +104,8 @@ impl<const CS: usize> Mesher<CS> {
                 let unpadded_opaque_col = opaque_col >> 1;
                 let ba_index = (b - 1) + (a - 1) * CS;
                 let ab_index = (a - 1) + (b - 1) * CS;
-                let up_faces = ba_index + 0 * Self::CS_2;
-                let down_faces = ba_index + 1 * Self::CS_2;
+                let up_faces = ba_index;
+                let down_faces = ba_index + Self::CS_2;
                 let right_faces = ab_index + 2 * Self::CS_2;
                 let left_faces = ab_index + 3 * Self::CS_2;
                 let front_faces = ba_index + 4 * Self::CS_2;
@@ -239,7 +245,7 @@ impl<const CS: usize> Mesher<CS> {
                                 v_type,
                             ),
                             1 => Quad::pack(
-                                mesh_front + mesh_length as usize,
+                                mesh_front + mesh_length,
                                 mesh_up,
                                 mesh_left,
                                 mesh_length,
@@ -248,7 +254,7 @@ impl<const CS: usize> Mesher<CS> {
                             ),
                             2 => Quad::pack(
                                 mesh_up,
-                                mesh_front + mesh_length as usize,
+                                mesh_front + mesh_length,
                                 mesh_left,
                                 mesh_length,
                                 mesh_width,
@@ -365,16 +371,16 @@ impl<const CS: usize> Mesher<CS> {
     /// Meshes a voxel buffer representing a chunk, using a BTreeSet signaling which voxel values are transparent.
     /// This is ~4x slower than the fast_mesh method but does not require maintaining 2 masks for each chunk.
     /// See https://github.com/Inspirateur/binary-greedy-meshing?tab=readme-ov-file#what-to-do-with-mesh_dataquads for using the output
-    pub fn mesh(&mut self, voxels: &[u16], transparents: &BTreeSet<u16>) {
-        self.face_culling(voxels, transparents);
+    pub fn mesh(&mut self, voxels: &[u16], is_transparent: impl Fn(u16) -> bool) {
+        self.face_culling(voxels, is_transparent);
         self.face_merging(voxels);
     }
 }
 
 #[inline]
 /// v1 is not AIR
-fn face_value(v1: u16, v2: u16, transparents: &BTreeSet<u16>) -> u64 {
-    (v2 == 0 || (v1 != v2 && transparents.contains(&v2))) as u64
+fn face_value(v1: u16, v2: u16, is_transparent: impl Fn(u16) -> bool) -> u64 {
+    (v2 == 0 || (v1 != v2 && is_transparent(v2))) as u64
 }
 
 #[inline]
@@ -394,7 +400,7 @@ pub fn indices(num_quads: usize) -> Vec<u32> {
     let mut res = Vec::with_capacity(num_quads * 6);
     for i in 0..num_quads as u32 {
         res.push((i << 2) | 2);
-        res.push((i << 2) | 0);
+        res.push(i << 2);
         res.push((i << 2) | 1);
         res.push((i << 2) | 1);
         res.push((i << 2) | 3);
@@ -410,13 +416,13 @@ pub fn pad_linearize<const CS: usize>(x: usize, y: usize, z: usize) -> usize {
 /// Compute an opacity mask from a voxel buffer and a BTreeSet specifying which voxel values are transparent
 pub fn compute_opaque_mask<const CS: usize>(
     voxels: &[u16],
-    transparents: &BTreeSet<u16>,
+    is_transparent: impl Fn(u16) -> bool,
 ) -> Box<[u64]> {
     let mut opaque_mask = vec![0; Mesher::<CS>::CS_P2].into_boxed_slice();
     // Fill the opacity mask
     for (i, voxel) in voxels.iter().enumerate() {
         // If the voxel is transparent we skip it
-        if *voxel == 0 || transparents.contains(voxel) {
+        if *voxel == 0 || is_transparent(*voxel) {
             continue;
         }
         let (r, q) = (i / Mesher::<CS>::CS_P, i % Mesher::<CS>::CS_P);
@@ -428,13 +434,13 @@ pub fn compute_opaque_mask<const CS: usize>(
 /// Compute a transparent mask from a voxel buffer and a BTreeSet specifying which voxel values are transparent
 pub fn compute_transparent_mask<const CS: usize>(
     voxels: &[u16],
-    transparents: &BTreeSet<u16>,
+    is_transparent: impl Fn(u16) -> bool,
 ) -> Box<[u64]> {
     let mut trans_mask = vec![0; Mesher::<CS>::CS_P2].into_boxed_slice();
     // Fill the opacity mask
     for (i, voxel) in voxels.iter().enumerate() {
         // If the voxel is opaque we skip it
-        if *voxel == 0 || !transparents.contains(voxel) {
+        if *voxel == 0 || !is_transparent(*voxel) {
             continue;
         }
         let (r, q) = (i / Mesher::<CS>::CS_P, i % Mesher::<CS>::CS_P);
@@ -459,7 +465,7 @@ mod tests {
         voxels[bgm::pad_linearize::<CS>(0, 1, 0)] = 1;
 
         let mut mesher = bgm::Mesher::<CS>::new();
-        let opaque_mask = bgm::compute_opaque_mask::<CS>(&voxels, &BTreeSet::new());
+        let opaque_mask = bgm::compute_opaque_mask::<CS>(&voxels, |_| false);
         let trans_mask = vec![0; bgm::Mesher::<CS>::CS_P2].into_boxed_slice();
         mesher.fast_mesh(&voxels, &opaque_mask, &trans_mask);
         // self.quads is the output
@@ -476,11 +482,11 @@ mod tests {
     fn same_results() {
         let voxels = test_buffer();
         let transparent_blocks = BTreeSet::from([2]);
-        let opaque_mask = bgm::compute_opaque_mask::<CS>(voxels.as_slice(), &BTreeSet::new());
+        let opaque_mask = bgm::compute_opaque_mask::<CS>(voxels.as_slice(), |_| false);
         let trans_mask =
-            bgm::compute_transparent_mask::<CS>(voxels.as_slice(), &transparent_blocks);
+            bgm::compute_transparent_mask::<CS>(voxels.as_slice(), |v| transparent_blocks.contains(&v));
         let mut mesher1 = bgm::Mesher::<CS>::new();
-        mesher1.mesh(voxels.as_slice(), &transparent_blocks);
+        mesher1.mesh(voxels.as_slice(), |v| transparent_blocks.contains(&v));
         let mut mesher2 = bgm::Mesher::<CS>::new();
         mesher2.fast_mesh(voxels.as_slice(), &opaque_mask, &trans_mask);
         assert_eq!(mesher1.quads, mesher2.quads);
@@ -501,9 +507,7 @@ mod tests {
     fn transparent_sphere(x: usize, y: usize, z: usize) -> u16 {
         if x == 8 {
             2
-        } else if (x as i32 - 31).pow(2) + (y as i32 - 31).pow(2) + (z as i32 - 31).pow(2)
-            < 16 as i32
-        {
+        } else if (x as i32 - 31).pow(2) + (y as i32 - 31).pow(2) + (z as i32 - 31).pow(2) < 16 {
             1
         } else {
             0

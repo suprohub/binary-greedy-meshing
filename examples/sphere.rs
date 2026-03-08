@@ -1,12 +1,12 @@
 use std::collections::BTreeSet;
 
 use bevy::{
+    asset::RenderAssetUsages,
+    mesh::{Indices, MeshVertexAttribute, PrimitiveTopology, VertexAttributeValues},
     pbr::wireframe::{WireframeConfig, WireframePlugin},
     prelude::*,
     render::{
         RenderPlugin,
-        mesh::{Indices, MeshVertexAttribute, PrimitiveTopology, VertexAttributeValues},
-        render_asset::RenderAssetUsages,
         render_resource::VertexFormat,
         settings::{RenderCreation, WgpuFeatures, WgpuSettings},
     },
@@ -55,7 +55,6 @@ fn setup(
     ));
     commands.spawn((
         Camera3d::default(),
-        Msaa::Sample4,
         Transform::from_translation(Vec3::new(60.0, 60.0, 100.0))
             .looking_at(Vec3::new(31.0, 31.0, 31.0), Vec3::Y),
     ));
@@ -69,7 +68,7 @@ fn setup(
         })),
     ));
 
-    commands.insert_resource(AmbientLight {
+    commands.spawn(AmbientLight {
         color: Color::WHITE,
         brightness: light_consts::lux::OVERCAST_DAY,
         ..Default::default()

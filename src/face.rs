@@ -30,6 +30,12 @@ impl From<u8> for Face {
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Vertex(pub u32);
 
+impl Default for Vertex {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Vertex {
     const MASK_6: u32 = 0b111111;
 

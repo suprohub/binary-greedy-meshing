@@ -17,12 +17,10 @@ impl Quad {
     ///
     /// layout:
     /// 0bvvvv_vvvv_vvvv_vvvv_vvvv_vvvv_vvvv_vvvv_00hh_hhhh_wwww_wwzz_zzzz_yyyy_yyxx_xxxx
-    #[inline]
     pub fn pack(x: usize, y: usize, z: usize, w: usize, h: usize, v_type: usize) -> Self {
         Quad(((v_type << 32) | (h << 24) | (w << 18) | (z << 12) | (y << 6) | x) as u64)
     }
 
-    #[inline]
     pub fn xyz(&self) -> [u64; 3] {
         let x = (self.0) & MASK_6;
         let y = (self.0 >> 6) & MASK_6;
@@ -30,23 +28,19 @@ impl Quad {
         [x, y, z]
     }
 
-    #[inline]
     pub fn width(&self) -> u64 {
         (self.0 >> 18) & MASK_6
     }
 
-    #[inline]
     pub fn height(&self) -> u64 {
         (self.0 >> 24) & MASK_6
     }
 
-    #[inline]
     pub fn voxel_id(&self) -> u64 {
         self.0 >> 32
     }
 
     /// Unpacks quad data and formats it as "{x};{y};{z} {w}x{h} v={v_type}" for debugging
-    #[inline]
     pub fn debug_quad(&self) -> String {
         let mut quad = self.0;
         let x = quad & MASK_6;

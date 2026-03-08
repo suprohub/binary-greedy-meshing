@@ -7,12 +7,23 @@ license = "MIT"
 repository = "https://github.com/Inspirateur/binary-greedy-meshing"
 keywords = ["meshing", "greedy", "binary", "voxel", "chunk"]
 
-[dependencies]
+[features]
+__dev_bevy = ["dep:bevy"]
+__dev_criterion = ["dep:criterion"]
 
-[dev-dependencies]
-bevy = "0.16.1"
-criterion = "0.6"
+[dependencies]
+bevy = { version = "0.18", optional = true }
+criterion = { version = "0.8", optional = true }
 
 [[bench]]
 name = "mesh"
 harness = false
+required-features = ["__dev_criterion"]
+
+[[example]]
+name = "sphere"
+required-features = ["__dev_bevy"]
+
+[[example]]
+name = "transparency"
+required-features = ["__dev_bevy"]

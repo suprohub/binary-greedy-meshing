@@ -1,12 +1,12 @@
 use std::collections::BTreeSet;
 
 use bevy::{
+    asset::RenderAssetUsages,
+    mesh::{Indices, MeshVertexAttribute, PrimitiveTopology, VertexAttributeValues},
     pbr::wireframe::{WireframeConfig, WireframePlugin},
     prelude::*,
     render::{
         RenderPlugin,
-        mesh::{Indices, MeshVertexAttribute, PrimitiveTopology, VertexAttributeValues},
-        render_asset::RenderAssetUsages,
         render_resource::VertexFormat,
         settings::{RenderCreation, WgpuFeatures, WgpuSettings},
     },
@@ -103,7 +103,7 @@ fn setup(
         })),
     ));
 
-    commands.insert_resource(AmbientLight {
+    commands.spawn(AmbientLight {
         color: Color::WHITE,
         brightness: light_consts::lux::OVERCAST_DAY,
         ..Default::default()
