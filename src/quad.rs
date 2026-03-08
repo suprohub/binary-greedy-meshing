@@ -41,12 +41,24 @@ impl Quad<u32> for RichQuad {
             .with_m(m)
             .build()
     }
-    fn x(&self) -> u8 { self.x() }
-    fn y(&self) -> u8 { self.y() }
-    fn z(&self) -> u8 { self.z() }
-    fn w(&self) -> u8 { self.w() }
-    fn h(&self) -> u8 { self.h() }
-    fn m(&self) -> u32 { self.m() }
+    fn x(&self) -> u8 {
+        self.x()
+    }
+    fn y(&self) -> u8 {
+        self.y()
+    }
+    fn z(&self) -> u8 {
+        self.z()
+    }
+    fn w(&self) -> u8 {
+        self.w()
+    }
+    fn h(&self) -> u8 {
+        self.h()
+    }
+    fn m(&self) -> u32 {
+        self.m()
+    }
 }
 
 #[bitfield(u32)]
@@ -77,12 +89,24 @@ impl Quad<u8> for MiniQuad {
             .with_m(m)
             .build()
     }
-    fn x(&self) -> u8 { self.x() }
-    fn y(&self) -> u8 { self.y() }
-    fn z(&self) -> u8 { self.z() }
-    fn w(&self) -> u8 { self.w() }
-    fn h(&self) -> u8 { self.h() }
-    fn m(&self) -> u8 { self.m() }
+    fn x(&self) -> u8 {
+        self.x()
+    }
+    fn y(&self) -> u8 {
+        self.y()
+    }
+    fn z(&self) -> u8 {
+        self.z()
+    }
+    fn w(&self) -> u8 {
+        self.w()
+    }
+    fn h(&self) -> u8 {
+        self.h()
+    }
+    fn m(&self) -> u8 {
+        self.m()
+    }
 }
 
 #[bitfield(u32)]
@@ -113,10 +137,22 @@ impl Quad<u8> for MicroQuad {
             .with_m(m)
             .build()
     }
-    fn x(&self) -> u8 { self.x() }
-    fn y(&self) -> u8 { self.y() }
-    fn z(&self) -> u8 { self.z() }
-    fn w(&self) -> u8 { self.w() }
-    fn h(&self) -> u8 { self.h() }
-    fn m(&self) -> u8 { self.m() }
+    fn x(&self) -> u8 {
+        self.x()
+    }
+    fn y(&self) -> u8 {
+        self.y()
+    }
+    fn z(&self) -> u8 {
+        self.z()
+    }
+    fn w(&self) -> u8 {
+        self.w()
+    }
+    fn h(&self) -> u8 {
+        self.h()
+    }
+    fn m(&self) -> u8 {
+        self.m()
+    }
 }

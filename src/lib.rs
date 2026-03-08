@@ -4,14 +4,14 @@
 extern crate alloc;
 
 mod face;
-mod quad;
 mod material;
+mod quad;
 
 use alloc::{boxed::Box, vec::Vec};
 
 pub use face::*;
-pub use quad::*;
 pub use material::*;
+pub use quad::*;
 
 pub type RichMesher = Mesher<u32, RichQuad, 62>;
 pub type MiniMesher = Mesher<u8, MiniQuad, 62>;
@@ -399,10 +399,7 @@ impl<M: Material, Q: Quad<M>, const CS: usize> Mesher<M, Q, CS> {
     }
 
     /// Compute an opacity mask from a voxel buffer and a BTreeSet specifying which voxel values are transparent
-    pub fn compute_opaque_mask(
-        voxels: &[M],
-        is_transparent: impl Fn(M) -> bool,
-    ) -> Box<[u64]> {
+    pub fn compute_opaque_mask(voxels: &[M], is_transparent: impl Fn(M) -> bool) -> Box<[u64]> {
         let mut opaque_mask = vec![0; Self::CS_P2].into_boxed_slice();
         // Fill the opacity mask
         for (i, voxel) in voxels.iter().enumerate() {
@@ -441,7 +438,6 @@ mod tests {
     use alloc::{boxed::Box, collections::btree_set::BTreeSet};
 
     pub const CS: usize = 62;
-
 
     /// Show quad output on a simple 2 voxels case
     #[test]
