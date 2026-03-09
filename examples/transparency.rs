@@ -1,5 +1,6 @@
 use bevy::{
     asset::RenderAssetUsages,
+    camera_controller::free_camera::{FreeCamera, FreeCameraPlugin},
     mesh::{Indices, MeshVertexAttribute, PrimitiveTopology, VertexAttributeValues},
     pbr::wireframe::{WireframeConfig, WireframePlugin},
     prelude::*,
@@ -30,6 +31,7 @@ fn main() {
                 ..default()
             }),
             WireframePlugin::default(),
+            FreeCameraPlugin,
         ))
         .add_systems(Startup, setup)
         .run();
@@ -69,6 +71,7 @@ fn setup(
     ));
     commands.spawn((
         Camera3d::default(),
+        FreeCamera::default(),
         Transform::from_translation(Vec3::new(40.0, 20.0, 50.0))
             .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
     ));

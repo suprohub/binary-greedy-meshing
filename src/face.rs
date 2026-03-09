@@ -58,6 +58,10 @@ impl Vertex {
     pub const fn xyz(&self) -> [f32; 3] {
         [self.x() as f32, self.y() as f32, self.z() as f32]
     }
+
+    pub const fn uv(&self) -> [f32; 2] {
+        [self.u() as f32, self.v() as f32]
+    }
 }
 
 impl Face {

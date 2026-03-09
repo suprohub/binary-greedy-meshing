@@ -13,7 +13,7 @@ __dev_criterion = ["dep:criterion"]
 
 [dependencies]
 bitfields = "1.0"
-bevy = { version = "0.18", optional = true }
+bevy = { version = "0.18", optional = true, features = ["free_camera"] }
 criterion = { version = "0.8", optional = true }
 num-traits = { version = "0.2", default-features = false }
 
@@ -28,6 +28,10 @@ required-features = ["__dev_bevy"]
 
 [[example]]
 name = "sphere32"
+required-features = ["__dev_bevy"]
+
+[[example]]
+name = "textured"
 required-features = ["__dev_bevy"]
 
 [[example]]
